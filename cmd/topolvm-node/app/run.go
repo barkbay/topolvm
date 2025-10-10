@@ -103,6 +103,7 @@ func subMain(ctx context.Context) error {
 
 		lvService, vgService = lvmd.NewEmbeddedServiceClients(
 			ctx,
+			nodename,
 			config.lvmd.DeviceClasses,
 			config.lvmd.LvcreateOptionClasses,
 		)

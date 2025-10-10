@@ -10,6 +10,7 @@ import (
 
 func NewEmbeddedServiceClients(
 	ctx context.Context,
+	nodename string,
 	deviceClasses []*lvmdTypes.DeviceClass,
 	LvcreateOptionClasses []*lvmdTypes.LvcreateOptionClass,
 ) (
@@ -19,5 +20,5 @@ func NewEmbeddedServiceClients(
 	dcManager := internalLvmd.NewDeviceClassManager(deviceClasses)
 	lvOptionClassManager := internalLvmd.NewLvcreateOptionClassManager(LvcreateOptionClasses)
 
-	return internalLvmd.NewEmbeddedServiceClients(ctx, dcManager, lvOptionClassManager)
+	return internalLvmd.NewEmbeddedServiceClients(ctx, nodename, dcManager, lvOptionClassManager)
 }

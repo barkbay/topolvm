@@ -18,6 +18,8 @@ import (
 )
 
 const (
+	fakeNodeName = "fake-node"
+
 	lvServiceTestVGName   = "test_lvservice"
 	lvServiceTestPoolName = "test_lvservice_pool"
 	lvServiceTestThickDC  = lvServiceTestVGName
@@ -70,6 +72,7 @@ func setupLVService(ctx context.Context, t *testing.T) (
 	}
 
 	lvService := NewLVService(
+		fakeNodeName,
 		NewDeviceClassManager(
 			[]*lvmdTypes.DeviceClass{
 				{

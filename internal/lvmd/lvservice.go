@@ -14,8 +14,9 @@ import (
 )
 
 // NewLVService creates a new LVServiceServer
-func NewLVService(dcmapper *DeviceClassManager, ocmapper *LvcreateOptionClassManager, notifyFunc func()) proto.LVServiceServer {
+func NewLVService(nodename string, dcmapper *DeviceClassManager, ocmapper *LvcreateOptionClassManager, notifyFunc func()) proto.LVServiceServer {
 	return &lvService{
+		nodename:   nodename,
 		dcmapper:   dcmapper,
 		ocmapper:   ocmapper,
 		notifyFunc: notifyFunc,
@@ -24,6 +25,7 @@ func NewLVService(dcmapper *DeviceClassManager, ocmapper *LvcreateOptionClassMan
 
 type lvService struct {
 	proto.UnimplementedLVServiceServer
+	nodename   string
 	dcmapper   *DeviceClassManager
 	ocmapper   *LvcreateOptionClassManager
 	notifyFunc func()
@@ -35,6 +37,13 @@ func (s *lvService) notify() {
 	}
 }
 
+func (s *lvService) maybePrefixWithNodeName(message string) string {
+	if s.nodename != "" {
+		return fmt.Sprintf("on node %s: %s", s.nodename, message)
+	}
+	return message
+}
+
 func (s *lvService) CreateLV(ctx context.Context, req *proto.CreateLVRequest) (*proto.CreateLVResponse, error) {
 	logger := log.FromContext(ctx).WithValues("name", req.GetName())
 
@@ -44,18 +53,18 @@ func (s *lvService) CreateLV(ctx context.Context, req *proto.CreateLVRequest) (*
 	}
 	pool, err := storagePoolForDeviceClass(ctx, dc)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to get pool from device class: %v", err)
+		return nil, status.Errorf(codes.Internal, s.maybePrefixWithNodeName("failed to get pool from device class: %v"), err)
 	}
 	oc := s.ocmapper.LvcreateOptionClass(req.LvcreateOptionClass)
 
 	requested := uint64(req.GetSizeBytes())
 	free, err := pool.Free(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to get free bytes: %v", err)
+		return nil, status.Errorf(codes.Internal, s.maybePrefixWithNodeName("failed to get free bytes: %v"), err)
 	}
 	if free < requested {
 		logger.Error(err, "not enough space left on VG", "free", free, "requested", requested)
-		return nil, status.Errorf(codes.ResourceExhausted, "no enough space left on VG: free=%d, requested=%d", free, requested)
+		return nil, status.Errorf(codes.ResourceExhausted, s.maybePrefixWithNodeName("no enough space left on VG: free=%d, requested=%d"), free, requested)
 	}
 
 	var stripe uint
